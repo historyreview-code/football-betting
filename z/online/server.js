@@ -217,6 +217,9 @@ app.get('/api/rooms/:id/settlement', (req, res) => {
 });
 
 // ==================== 启动 ====================
+// healthcheck
+app.get("/api/rooms/health", (req,res) => res.json({status:"ok"}));
+
 app.listen(PORT, () => {
   console.log(`⚽ 足球投注服务器已启动: http://localhost:${PORT}`);
 });

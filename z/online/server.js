@@ -217,7 +217,6 @@ app.get('/api/rooms/:id/settlement', (req, res) => {
 });
 
 // ==================== 启动 ====================
-// healthcheck
 app.get("/api/rooms/health", (req,res) => res.json({status:"ok"}));
 
 app.listen(PORT, () => {

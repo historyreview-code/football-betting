@@ -62,7 +62,7 @@ input[type=number]{text-align:center;padding:7px 6px}
 .dash-item .l{font-size:11px;color:var(--muted)}
 .dash-item .v{font-size:20px;font-weight:700;margin-top:2px}
 .empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
-.room-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:32px;max-width:400px;margin:40px auto;text-align:center}
+.room-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:32px;max-width:420px;margin:40px auto;text-align:center}
 .room-card h2{color:var(--accent);margin-bottom:16px}
 .room-card .form-group{text-align:left}
 .player-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -72,16 +72,13 @@ input[type=number]{text-align:center;padding:7px 6px}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .screen{display:none}
 .screen.active{display:block}
-.copy-btn{font-size:11px;padding:2px 8px;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:4px;margin-left:6px}
-.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
-.api-url{font-size:12px;color:var(--muted);margin-top:8px;word-break:break-all}
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
 
-<!-- ===== 首页/加入页面 ===== -->
+<!-- ===== 首页 ===== -->
 <div class="screen active" id="screen-home">
   <div class="header">
     <h1>⚽ 足球投注 · 在线版</h1>
@@ -90,40 +87,40 @@ input[type=number]{text-align:center;padding:7px 6px}
   <div class="app">
     <div class="room-card">
       <h2>🏠 创建或加入房间</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">参与者各自用手机/电脑打开本页面，加入同一房间即可各自下注</p>
       <div class="form-group">
         <label>你的昵称</label>
-        <input type="text" id="myName" placeholder="输入昵称" onkeydown="if(event.key==='Enter'){if(document.getElementById('roomIdInput').value)joinRoom();else createRoom();}">
+        <input type="text" id="myName" placeholder="输入你的名字" onkeydown="if(event.key==='Enter'){if(document.getElementById('roomIdInput').value)joinRoom();else createRoom();}">
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <input type="text" id="roomIdInput" placeholder="房间号（加入时填）" style="flex:1">
-        <button class="btn btn-accent" onclick="joinRoom()">加入</button>
-      </div>
-      <button class="btn btn-accent" onclick="createRoom()" style="width:100%">➕ 创建新房间</button>
-      <div class="form-group" style="margin-top:12px">
+      <div class="form-group">
         <label>🔑 房间密码（可选）</label>
         <input type="text" id="roomPassword" placeholder="留空为公开房间">
       </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <input type="text" id="roomIdInput" placeholder="加入已有房间时填写房间号" style="flex:1">
+        <button class="btn btn-accent" onclick="joinRoom()">加入</button>
+      </div>
+      <button class="btn btn-accent" onclick="createRoom()" style="width:100%">➕ 创建新房间</button>
     </div>
   </div>
 </div>
 
-<!-- ===== 房间内页面 ===== -->
+<!-- ===== 房间页面 ===== -->
 <div class="screen" id="screen-room">
   <div class="header">
     <div>
       <h1>⚽ <span id="roomNameDisplay"></span></h1>
       <span class="info" id="roomInfoDisplay"></span>
     </div>
-    <div>
-      <span style="font-size:13px;color:var(--accent);font-weight:600" id="myNameDisplay"></span>
-      <button class="btn btn-outline btn-sm" onclick="leaveRoom()" style="margin-left:8px">离开</button>
+    <div style="text-align:right">
+      <div style="font-size:13px;color:var(--accent);font-weight:600" id="myNameDisplay"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px" id="roomIdDisplay"></div>
+      <button class="btn btn-outline btn-sm" onclick="leaveRoom()" style="margin-top:4px">离开房间</button>
     </div>
   </div>
   <div class="app" id="roomApp">
-    <!-- 游戏大厅：网格布局 -->
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:20px">
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
       <div>
-        <!-- 比赛列表 -->
         <div class="card">
           <div class="card-title">
             📋 比赛列表
@@ -137,7 +134,6 @@ input[type=number]{text-align:center;padding:7px 6px}
         </div>
       </div>
       <div>
-        <!-- 参与者 + 投注面板 -->
         <div class="card">
           <div class="card-title">👥 参与者 <span id="playerCountBadge" style="font-size:11px;color:var(--muted);margin-left:auto"></span></div>
           <div id="playerListDisplay"></div>
@@ -152,37 +148,33 @@ input[type=number]{text-align:center;padding:7px 6px}
 </div>
 
 <script>
-// ==================== 状态 ====================
 const API_BASE = window.location.origin;
 let roomId = null;
 let myName = null;
 let myRole = null;
 let pollTimer = null;
 
-// ==================== 页面切换 ====================
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-// ==================== 房间管理 ====================
 async function createRoom() {
   const name = document.getElementById('myName').value.trim();
   const password = document.getElementById('roomPassword').value.trim();
   if (!name) return toast('请输入昵称');
-  
   try {
     const res = await fetch(`${API_BASE}/api/rooms`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name: '我的房间', creator: name, password })
+      body: JSON.stringify({ name: '足球投注房', creator: name, password })
     });
     const data = await res.json();
     if (res.ok) {
       roomId = data.roomId;
       myName = name;
       myRole = 'admin';
-      enterRoom(data.roomId);
+      enterRoom();
     } else {
       toast(data.error || '创建失败');
     }
@@ -197,7 +189,6 @@ async function joinRoom() {
   const password = document.getElementById('roomPassword').value.trim();
   if (!name) return toast('请输入昵称');
   if (!roomIdInput) return toast('请输入房间号');
-  
   try {
     const res = await fetch(`${API_BASE}/api/rooms/join`, {
       method: 'POST',
@@ -209,7 +200,7 @@ async function joinRoom() {
       roomId = data.roomId;
       myName = name;
       myRole = 'player';
-      enterRoom(data.roomId);
+      enterRoom();
     } else {
       toast(data.error || '加入失败');
     }
@@ -218,79 +209,52 @@ async function joinRoom() {
   }
 }
 
-async function enterRoom(id) {
-  // 获取房间信息
-  const res = await fetch(`${API_BASE}/api/rooms/${id}`);
+async function enterRoom() {
+  const res = await fetch(`${API_BASE}/api/rooms/${roomId}`);
   const room = await res.json();
-  
   document.getElementById('roomNameDisplay').textContent = room.name;
-  document.getElementById('roomInfoDisplay').textContent = `房间号: ${id} · ${room.players.length} 人`;
-  document.getElementById('myNameDisplay').textContent = `👤 ${myName} ${myRole === 'admin' ? '👑' : ''}`;
-  
+  document.getElementById('roomInfoDisplay').textContent = `${room.players.length} 人已加入`;
+  document.getElementById('roomIdDisplay').textContent = `房间号: ${roomId} · 把房间号发给其他人加入`;
+  document.getElementById('myNameDisplay').textContent = `👤 ${myName} ${myRole === 'admin' ? '👑 管理员' : ''}`;
   showScreen('screen-room');
-  
-  // 开始轮询
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(() => refreshRoom(), 2000);
+  pollTimer = setInterval(refreshRoom, 2000);
   refreshRoom();
 }
 
 function leaveRoom() {
   if (pollTimer) clearInterval(pollTimer);
-  roomId = null;
-  myName = null;
-  myRole = null;
+  roomId = null; myName = null; myRole = null;
+  document.getElementById('roomIdInput').value = '';
   showScreen('screen-home');
 }
 
-// ==================== 获取刷新数据 ====================
 async function refreshRoom() {
   if (!roomId) return;
   try {
     const res = await fetch(`${API_BASE}/api/rooms/${roomId}`);
     const room = await res.json();
-    
-    document.getElementById('roomInfoDisplay').textContent = `房间号: ${roomId} · ${room.players.length} 人`;
-    
-    renderPlayers(room.players);
+    document.getElementById('roomInfoDisplay').textContent = `${room.players.length} 人已加入`;
+    document.getElementById('playerListDisplay').innerHTML = room.players.map(p =>
+      `<span class="player-badge ${p.role}">${p.name} ${p.role === 'admin' ? '👑' : ''}</span>`
+    ).join('');
+    document.getElementById('playerCountBadge').textContent = `${room.players.length} 人`;
     renderMatchList(room);
     renderMyBets(room);
     renderStats(room);
-  } catch(e) {
-    // 静默失败，轮询继续
-  }
-}
-
-async function refreshSettlement() {
-  if (!roomId) return;
-  const res = await fetch(`${API_BASE}/api/rooms/${roomId}/settlement`);
-  const data = await res.json();
-  renderSettlement(data);
-}
-
-// ==================== 渲染 ====================
-function renderPlayers(players) {
-  const el = document.getElementById('playerListDisplay');
-  document.getElementById('playerCountBadge').textContent = `${players.length} 人`;
-  el.innerHTML = players.map(p =>
-    `<span class="player-badge ${p.role}">${p.name} ${p.role === 'admin' ? '👑' : ''}</span>`
-  ).join('');
+  } catch(e) {}
 }
 
 function renderMatchList(room) {
   const el = document.getElementById('matchList');
   if (room.matches.length === 0) {
-    el.innerHTML = '<div class="empty">暂无比赛，请管理员添加</div>';
-    return;
+    el.innerHTML = '<div class="empty">暂无比赛，请管理员添加</div>'; return;
   }
-  
   el.innerHTML = room.matches.map(m => {
     const isSettled = room.settled[m.id];
     const result = room.result[m.id];
     const cls = isSettled ? 'done' : 'live';
-    const statusText = isSettled ? `✅ 已结算` : '⏳ 待结算';
     const rLabels = {home:'🏠主胜', draw:'🤝平局', away:'✈️客胜'};
-    
     let resultHTML = '';
     if (myRole === 'admin' && !isSettled) {
       const sel = result;
@@ -300,23 +264,18 @@ function renderMatchList(room) {
         <button class="${sel==='away'?'sel-away':''}" onclick="setResult('${m.id}','away')">✈️ 客胜</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-        ${result ? `<span style="font-size:12px;color:var(--accent)">已选: ${rLabels[result]}</span>` : ''}
-        ${result ? `<button class="btn btn-win btn-xs" onclick="settleMatch('${m.id}')">🔒 结算</button>` : ''}
-        <button class="btn btn-outline btn-xs" onclick="deleteMatch('${m.id}')">🗑️</button>
+        ${result ? `<span style="font-size:12px;color:var(--accent)">已选: ${rLabels[result]}</span><button class="btn btn-win btn-xs" onclick="settleMatch('${m.id}')">🔒 结算</button>` : ''}
+        <button class="btn btn-outline btn-xs" onclick="deleteMatch('${m.id}')">🗑️ 删除</button>
       </div>`;
     } else if (isSettled) {
-      resultHTML = `<div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--win)">
-        ✅ 结果: ${rLabels[result]}
-        ${myRole === 'admin' ? `<button class="btn btn-outline btn-xs" onclick="unSettleMatch('${m.id}')">↩️</button>` : ''}
-      </div>`;
+      resultHTML = `<div style="font-size:13px;color:var(--win)">✅ 结果: ${rLabels[result]}${myRole === 'admin' ? `<button class="btn btn-outline btn-xs" onclick="unSettleMatch('${m.id}')" style="margin-left:8px">↩️</button>` : ''}</div>`;
     } else {
       resultHTML = '<span style="font-size:12px;color:var(--muted)">管理员尚未确认结果</span>';
     }
-    
     return `<div class="match-card ${cls}">
       <div class="match-meta">
         <div class="match-teams">${m.home} <span class="vs">VS</span> ${m.away}</div>
-        <span class="match-status ${isSettled?'done':'pending'}">${statusText}</span>
+        <span class="match-status ${isSettled?'done':'pending'}">${isSettled ? '✅ 已结算' : '⏳ 待结算'}</span>
       </div>
       ${resultHTML}
     </div>`;
@@ -325,25 +284,20 @@ function renderMatchList(room) {
 
 function renderMyBets(room) {
   const el = document.getElementById('myBetArea');
-  const pendingMatches = room.matches.filter(m => !room.settled[m.id]);
-  
-  if (pendingMatches.length === 0) {
-    el.innerHTML = '<div class="empty">没有可投注的比赛</div>';
-    return;
-  }
-  
+  const pending = room.matches.filter(m => !room.settled[m.id]);
+  if (pending.length === 0) { el.innerHTML = '<div class="empty">没有可投注的比赛</div>'; return; }
   let html = '';
-  for (const m of pendingMatches) {
-    const myBets = (room.bets[m.id] && room.bets[m.id][myName]) || {home:0, draw:0, away:0};
+  for (const m of pending) {
+    const b = (room.bets[m.id] && room.bets[m.id][myName]) || {home:0, draw:0, away:0};
     html += `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
       <div style="font-size:13px;font-weight:500;margin-bottom:6px">${m.home} VS ${m.away}</div>
       <div class="bet-grid">
         <div class="bet-header"><span></span><span>🏠主</span><span>🤝平</span><span>✈️客</span></div>
         <div class="bet-row">
-          <span class="name">我的下注</span>
-          <input class="bet-input" type="number" min="0" step="1" value="${myBets.home||''}" placeholder="0" onchange="placeBet('${m.id}','home',this.value)">
-          <input class="bet-input" type="number" min="0" step="1" value="${myBets.draw||''}" placeholder="0" onchange="placeBet('${m.id}','draw',this.value)">
-          <input class="bet-input" type="number" min="0" step="1" value="${myBets.away||''}" placeholder="0" onchange="placeBet('${m.id}','away',this.value)">
+          <span class="name">下注</span>
+          <input class="bet-input" type="number" min="0" step="1" value="${b.home||''}" placeholder="0" onchange="placeBet('${m.id}','home',this.value)">
+          <input class="bet-input" type="number" min="0" step="1" value="${b.draw||''}" placeholder="0" onchange="placeBet('${m.id}','draw',this.value)">
+          <input class="bet-input" type="number" min="0" step="1" value="${b.away||''}" placeholder="0" onchange="placeBet('${m.id}','away',this.value)">
         </div>
       </div>
     </div>`;
@@ -355,17 +309,12 @@ function renderStats(room) {
   fetch(`${API_BASE}/api/rooms/${roomId}/settlement`).then(r => r.json()).then(data => {
     const el = document.getElementById('statsContent');
     const settledCount = room.matches.filter(m => room.settled[m.id]).length;
-    if (settledCount === 0) {
-      el.innerHTML = '<div class="empty">暂无已结算比赛</div>';
-      return;
-    }
-    
+    if (settledCount === 0) { el.innerHTML = '<div class="empty">暂无已结算比赛</div>'; return; }
     const rep = data.report;
     const totalBet = Object.values(rep).reduce((s,r) => s + r.totalBet, 0);
     const winners = Object.values(rep).filter(r => r.netProfit > 0).length;
     const losers = Object.values(rep).filter(r => r.netProfit < 0).length;
     const sorted = [...data.players].sort((a,b) => (rep[b]?.netProfit||0) - (rep[a]?.netProfit||0));
-    
     el.innerHTML = `<div class="dash-grid">
       <div class="dash-item"><div class="l">已结算</div><div class="v" style="color:var(--accent)">${settledCount}</div></div>
       <div class="dash-item"><div class="l">总下注</div><div class="v" style="color:var(--accent)">${totalBet.toFixed(2)}</div></div>
@@ -390,111 +339,60 @@ function renderStats(room) {
   }).catch(() => {});
 }
 
-// ==================== 操作API ====================
 async function placeBet(matchId, opt, value) {
   const val = parseFloat(value) || 0;
   if (val < 0) return;
-  
-  // 先获取当前投注数据
   const roomRes = await fetch(`${API_BASE}/api/rooms/${roomId}`);
   const room = await roomRes.json();
   const myBets = (room.bets[matchId] && room.bets[matchId][myName]) || {home:0, draw:0, away:0};
   myBets[opt] = val;
-  
   try {
     await fetch(`${API_BASE}/api/rooms/${roomId}/bets`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ player: myName, matchId, ...myBets })
     });
-    refreshRoom();
-  } catch(e) {
-    toast('投注失败');
-  }
+  } catch(e) {}
 }
 
 async function setResult(matchId, result) {
-  try {
-    await fetch(`${API_BASE}/api/rooms/${roomId}/results/${matchId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ result, creator: myName })
-    });
-    refreshRoom();
-  } catch(e) {
-    toast('设置结果失败');
-  }
+  await fetch(`${API_BASE}/api/rooms/${roomId}/results/${matchId}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ result, creator: myName })
+  });
 }
-
 async function settleMatch(matchId) {
-  try {
-    await fetch(`${API_BASE}/api/rooms/${roomId}/settle/${matchId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ creator: myName })
-    });
-    refreshRoom();
-  } catch(e) {
-    toast('结算失败');
-  }
+  await fetch(`${API_BASE}/api/rooms/${roomId}/settle/${matchId}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ creator: myName })
+  });
 }
-
 async function unSettleMatch(matchId) {
-  try {
-    await fetch(`${API_BASE}/api/rooms/${roomId}/unsettle/${matchId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ creator: myName })
-    });
-    refreshRoom();
-  } catch(e) {
-    toast('操作失败');
-  }
+  await fetch(`${API_BASE}/api/rooms/${roomId}/unsettle/${matchId}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ creator: myName })
+  });
 }
-
 async function showAddMatch() {
-  const home = prompt('主队名称:');
-  if (!home) return;
-  const away = prompt('客队名称:');
-  if (!away) return;
+  const home = prompt('主队名称:'); if (!home) return;
+  const away = prompt('客队名称:'); if (!away) return;
   if (home === away) return toast('主队和客队不能相同');
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/rooms/${roomId}/matches`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ home, away, creator: myName })
-    });
-    if (res.ok) {
-      refreshRoom();
-    } else {
-      const data = await res.json();
-      toast(data.error || '添加失败');
-    }
-  } catch(e) {
-    toast('添加失败');
-  }
+  const res = await fetch(`${API_BASE}/api/rooms/${roomId}/matches`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ home, away, creator: myName })
+  });
+  if (!res.ok) toast((await res.json()).error || '添加失败');
 }
-
 async function deleteMatch(matchId) {
-  if (!confirm('确定删除该比赛？')) return;
-  try {
-    await fetch(`${API_BASE}/api/rooms/${roomId}/matches/${matchId}`, {
-      method: 'DELETE',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ creator: myName })
-    });
-    refreshRoom();
-  } catch(e) {
-    toast('删除失败');
-  }
+  if (!confirm('确定删除？')) return;
+  await fetch(`${API_BASE}/api/rooms/${roomId}/matches/${matchId}`, {
+    method: 'DELETE', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ creator: myName })
+  });
 }
-
-// ==================== 工具 ====================
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 3000);
 }
 </script>

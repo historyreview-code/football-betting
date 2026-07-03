@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>足球投注 · 在线版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1923;--card:#1a2d40;--surface:#132433;--accent:#00e5a0;--win:#2ecc71;--draw:#f1c40f;--lose:#e74c3c;--text:#e8edf2;--muted:#8899aa;--border:#1f3a52}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.top{background:linear-gradient(135deg,#0b1a26,#132433);border-bottom:2px solid var(--accent);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.top h1{font-size:20px;color:var(--accent)}
+.top .info{font-size:12px;color:var(--muted)}
+.app{padding:20px;max-width:1000px;margin:0 auto}
+.screen{display:none}.screen.on{display:block}
+.card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:16px;margin-bottom:14px}
+.card h3{font-size:14px;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;font-size:14px;outline:none;width:100%}
+input:focus{border-color:var(--accent)}
+input[type=number]{padding:6px 6px;text-align:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-accent{background:var(--accent);color:#0b1a26}.btn-accent:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:4px}
+.btn-green{background:var(--win);color:#fff}.btn-green:hover{opacity:.85}
+.btn-red{background:var(--lose);color:#fff}
+.mt8{margin-top:8px}.mb8{margin-bottom:8px}.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.match{background:var(--surface);border-radius:8px;border:1px solid var(--border);padding:14px;margin-bottom:10px}
+.match.done{opacity:.7}
+.match .top-line{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.match .teams{font-size:15px;font-weight:600}
+.match .teams .vs{color:var(--muted);font-size:12px;margin:0 6px;font-weight:400}
+.match .status{font-size:11px;padding:2px 8px;border-radius:8px}
+.match .status.pending{background:rgba(136,153,170,.12);color:var(--muted)}
+.match .status.done{background:rgba(46,204,113,.12);color:var(--win)}
+.bet-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.bet-table th{text-align:left;padding:5px 6px;color:var(--muted);font-weight:500;font-size:11px;border-bottom:1px solid var(--border)}
+.bet-table td{padding:5px 6px;border-bottom:1px solid rgba(31,58,82,.3)}
+.bet-table .my-row{background:rgba(0,229,160,.05)}
+.bet-input{width:60px;padding:4px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:12px;text-align:center}
+.bet-input:focus{border-color:var(--accent)}
+.result-btn{padding:5px 10px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:4px;cursor:pointer;font-size:12px}
+.result-btn.on-home{border-color:var(--win);color:var(--win);background:rgba(46,204,113,.1);font-weight:600}
+.result-btn.on-draw{border-color:var(--draw);color:var(--draw);background:rgba(241,196,15,.1);font-weight:600}
+.result-btn.on-away{border-color:var(--lose);color:var(--lose);background:rgba(231,76,60,.1);font-weight:600}
+.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px}
+.dash-item{background:var(--surface);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)}
+.dash-item .l{font-size:10px;color:var(--muted)}
+.dash-item .v{font-size:18px;font-weight:700;margin-top:2px}
+.rank{width:100%;border-collapse:collapse;font-size:13px}
+.rank th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:11px}
+.rank td{padding:6px 8px;border-bottom:1px solid rgba(31,58,82,.3)}
+.pos{color:var(--win)}.neg{color:var(--lose)}
+.empty{padding:30px;text-align:center;color:var(--muted);font-size:13px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);padding:10px 20px;border-radius:8px;font-size:13px;display:none;z-index:999}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- 首页 -->
+<div class="screen on" id="page-home">
+  <div style="max-width:400px;margin:60px auto;background:var(--card);border-radius:12px;border:1px solid var(--border);padding:32px;text-align:center">
+    <h2 style="color:var(--accent);margin-bottom:6px">⚽ 足球投注</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">多人参与 · 公开投注 · 自动清算</p>
+    <div style="text-align:left;margin-bottom:12px">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">你的昵称</label>
+      <input id="myName" placeholder="输入昵称" onkeydown="if(event.key==='Enter')autoJoin()">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="roomId" placeholder="房间号（加入时填）" style="flex:1" onkeydown="if(event.key==='Enter')join()">
+      <button class="btn btn-accent btn-sm" onclick="join()">加入</button>
+    </div>
+    <button class="btn btn-accent" onclick="create()" style="width:100%">创建新房间</button>
+  </div>
+</div>
+
+<!-- 房间页 -->
+<div class="screen" id="page-room">
+  <div class="top">
+    <div><h1>⚽ 足球投注</h1><div class="info" id="roomInfo"></div></div>
+    <div class="flex">
+      <span id="myTag" style="font-size:13px;color:var(--accent);font-weight:600"></span>
+      <button class="btn btn-outline btn-sm" onclick="leave()">离开</button>
+    </div>
+  </div>
+  <div class="app">
+    <!-- 清算总览 -->
+    <div class="card" id="statCard"></div>
+
+    <!-- 比赛列表 -->
+    <div class="card">
+      <div class="flex" style="justify-content:space-between;margin-bottom:12px">
+        <h3 style="margin:0;border:none;padding:0">📋 比赛</h3>
+        <button class="btn btn-accent btn-sm" id="addMatchBtn" onclick="addMatch()" style="display:none">➕ 添加</button>
+      </div>
+      <div id="matchList"></div>
+    </div>
+
+    <!-- 参与者 -->
+    <div class="card">
+      <h3>👥 参与者</h3>
+      <div id="playerList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let rid = null, me = null, role = null;
+let timer = null;
+
+function $(id){return document.getElementById(id)}
+
+// === 房间操作 ===
+async function create() {
+  const name = $('myName').value.trim();
+  if (!name) return toast('请输入昵称');
+  try {
+    const r = await fetch(`${API}/api/room`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({creator: name})
+    });
+    const d = await r.json();
+    if (r.ok) { rid = d.id; me = name; role = d.role; enterRoom(); }
+    else toast(d.err);
+  } catch(e) { toast('连接服务器失败'); }
+}
+
+async function join() {
+  const name = $('myName').value.trim();
+  const id = $('roomId').value.trim();
+  if (!name) return toast('请输入昵称');
+  if (!id) return toast('请输入房间号');
+  try {
+    const r = await fetch(`${API}/api/room/${id}/join`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    const d = await r.json();
+    if (r.ok) { rid = id; me = name; role = d.role; enterRoom(); }
+    else toast(d.err);
+  } catch(e) { toast('连接服务器失败'); }
+}
+
+function autoJoin() {
+  if ($('roomId').value.trim()) join(); else create();
+}
+
+function enterRoom() {
+  $('page-home').classList.remove('on');
+  $('page-room').classList.add('on');
+  $('roomInfo').textContent = `房间号: ${rid}`;
+  $('myTag').textContent = `👤 ${me} ${role==='admin'?'👑':''}`;
+  if (role === 'admin') $('addMatchBtn').style.display = '';
+  if (timer) clearInterval(timer);
+  timer = setInterval(refresh, 2000);
+  refresh();
+}
+
+function leave() {
+  if (timer) clearInterval(timer);
+  rid = null; me = null; role = null;
+  $('page-room').classList.remove('on');
+  $('page-home').classList.add('on');
+  $('roomId').value = '';
+}
+
+// === 刷新数据 ===
+async function refresh() {
+  if (!rid) return;
+  try {
+    const r = await fetch(`${API}/api/room/${rid}`);
+    const room = await r.json();
+    renderRoom(room);
+    
+    // 清算
+    const s = await fetch(`${API}/api/room/${rid}/settlement`);
+    const data = await s.json();
+    renderStats(data);
+  } catch(e) {}
+}
+
+function renderRoom(room) {
+  // 参与者
+  $('playerList').innerHTML = room.players.map(p =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;font-size:12px;margin:3px">${p.name} ${p.role==='admin'?'👑':''}</span>`
+  ).join('');
+
+  // 比赛列表
+  if (room.matches.length === 0) {
+    $('matchList').innerHTML = '<div class="empty">暂无比赛，管理员请点 ➕ 添加</div>';
+    return;
+  }
+  $('matchList').innerHTML = room.matches.map(m => renderMatch(m, room)).join('');
+}
+
+function renderMatch(m, room) {
+  const done = m.settled;
+  const rLabel = {home:'🏠主胜',draw:'🤝平局',away:'✈️客胜'};
+
+  // 结果选择器（管理员可见）
+  let resultHTML = '';
+  if (role === 'admin' && !done) {
+    resultHTML = `<div class="flex mt8">
+      <button class="result-btn ${m.result==='home'?'on-home':''}" onclick="setResult('${m.id}','home')">🏠 主胜</button>
+      <button class="result-btn ${m.result==='draw'?'on-draw':''}" onclick="setResult('${m.id}','draw')">🤝 平局</button>
+      <button class="result-btn ${m.result==='away'?'on-away':''}" onclick="setResult('${m.id}','away')">✈️ 客胜</button>
+      ${m.result ? `<button class="btn btn-green btn-xs" onclick="settle('${m.id}')">🔒 结算</button>` : ''}
+    </div>`;
+  } else if (done) {
+    resultHTML = `<div class="flex mt8">
+      <span style="font-size:13px;color:var(--win)">✅ ${rLabel[m.result]}</span>
+      ${role==='admin' ? `<button class="btn btn-outline btn-xs" onclick="unsettle('${m.id}')">↩️ 重开</button>` : ''}
+    </div>`;
+  } else {
+    resultHTML = `<div class="flex mt8"><span style="font-size:12px;color:var(--muted)">⏳ 管理员尚未确认结果</span></div>`;
+  }
+
+  // 投注表格
+  const allPlayers = room.players.map(p => p.name);
+  const betKeys = ['home','draw','away'];
+  const betLabels = {home:'🏠主',draw:'🤝平',away:'✈️客'};
+
+  let tableHTML = `<table class="bet-table"><tr><th>参与者</th><th>🏠主</th><th>🤝平</th><th>✈️客</th><th>合计</th></tr>`;
+
+  for (const p of allPlayers) {
+    const b = (m.bets && m.bets[p]) || {};
+    const h = b.home||0, d = b.draw||0, a = b.away||0;
+    const total = h+d+a;
+    const isMe = p === me;
+
+    if (!done && isMe) {
+      // 自己的行 - 可编辑
+      tableHTML += `<tr class="my-row"><td style="font-weight:600">${p} ✏️</td>
+        <td><input class="bet-input" type="number" min="0" step="1" value="${h||''}" onchange="bet('${m.id}','home',this.value)"></td>
+        <td><input class="bet-input" type="number" min="0" step="1" value="${d||''}" onchange="bet('${m.id}','draw',this.value)"></td>
+        <td><input class="bet-input" type="number" min="0" step="1" value="${a||''}" onchange="bet('${m.id}','away',this.value)"></td>
+        <td>${total||''}</td></tr>`;
+    } else {
+      // 他人行 - 只读
+      tableHTML += `<tr><td>${p}</td>
+        <td>${h||'-'}</td><td>${d||'-'}</td><td>${a||'-'}</td>
+        <td>${total||'-'}</td></tr>`;
+    }
+  }
+  tableHTML += '</table>';
+
+  // 清算明细（已结算）
+  let settleHTML = '';
+  if (done) {
+    const pools = {home:0,draw:0,away:0};
+    for (const b of Object.values(m.bets||{})) {
+      pools.home+=b.home||0; pools.draw+=b.draw||0; pools.away+=b.away||0;
+    }
+    const total = pools.home+pools.draw+pools.away;
+    const winPool = pools[m.result]||0, lossPool = total - winPool;
+    let rows = '';
+    for (const p of allPlayers) {
+      const b = (m.bets && m.bets[p]) || {};
+      const pb = (b.home||0)+(b.draw||0)+(b.away||0);
+      if (pb === 0) continue;
+      const pw = b[m.result]||0;
+      let wb = pw;
+      if (pw > 0 && winPool > 0) wb += (pw / winPool) * lossPool;
+      const profit = wb - pb;
+      const cls = profit >= 0 ? 'pos' : 'neg';
+      rows += `<tr><td>${p}</td><td>${pb}</td><td class="${cls}">${profit>=0?'+':''}${profit.toFixed(2)}</td></tr>`;
+    }
+    settleHTML = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--accent);margin-bottom:6px">📊 清算明细</div>
+      <table class="bet-table"><tr><th>参与者</th><th>下注</th><th>盈亏</th></tr>${rows}</table></div>`;
+  }
+
+  return `<div class="match ${done?'done':''}">
+    <div class="top-line">
+      <div class="teams">${m.home} <span class="vs">VS</span> ${m.away}</div>
+      <span class="status ${done?'done':'pending'}">${done?'✅ 已结算':'⏳ 待结算'}</span>
+    </div>
+    ${resultHTML}
+    ${tableHTML}
+    ${settleHTML}
+  </div>`;
+}
+
+function renderStats(data) {
+  const settled = document.querySelectorAll('.match.done').length;
+  const el = $('statCard');
+  if (settled === 0) { el.innerHTML = '<div class="empty">暂无已结算比赛</div>'; return; }
+  
+  const rep = data.report;
+  const totalBet = Object.values(rep).reduce((s,r) => s + r.bet, 0);
+  const winners = Object.values(rep).filter(r => r.profit > 0).length;
+  const losers = Object.values(rep).filter(r => r.profit < 0).length;
+  const sorted = [...data.players].sort((a,b) => (rep[b]?.profit||0) - (rep[a]?.profit||0));
+
+  el.innerHTML = `<div class="dash">
+    <div class="dash-item"><div class="l">已结算</div><div class="v" style="color:var(--accent)">${settled}</div></div>
+    <div class="dash-item"><div class="l">总下注</div><div class="v" style="color:var(--accent)">${totalBet.toFixed(2)}</div></div>
+    <div class="dash-item"><div class="l">盈利</div><div class="v pos">${winners}</div></div>
+    <div class="dash-item"><div class="l">亏损</div><div class="v neg">${losers}</div></div>
+  </div>
+  <table class="rank">
+    <tr><th>#</th><th>参与者</th><th>总下注</th><th>净利润</th><th>盈亏系数</th></tr>
+    ${sorted.map((p,i) => {
+      const r = rep[p] || {bet:0,profit:0,coeff:0};
+      const sign = r.profit >= 0 ? '+' : '';
+      return `<tr>
+        <td>${['🥇','🥈','🥉',''][i]||(i+1)}</td>
+        <td style="font-weight:600">${p}</td>
+        <td>${r.bet.toFixed(2)}</td>
+        <td class="${r.profit>=0?'pos':'neg'}">${sign}${r.profit.toFixed(2)}</td>
+        <td class="${r.coeff>=0?'pos':'neg'}">${r.coeff>=0?'+':''}${r.coeff.toFixed(4)}</td>
+      </tr>`;
+    }).join('')}
+  </table>`;
+}
+
+// === 操作 ===
+async function bet(mid, opt, val) {
+  const v = parseFloat(val) || 0;
+  if (v < 0) return;
+  try {
+    // 先获取当前投注
+    const r = await fetch(`${API}/api/room/${rid}`);
+    const room = await r.json();
+    const m = room.matches.find(x => x.id === mid);
+    if (!m) return;
+    const b = (m.bets && m.bets[me]) || {home:0,draw:0,away:0};
+    b[opt] = v;
+    await fetch(`${API}/api/room/${rid}/bet`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({player: me, matchId: mid, ...b})
+    });
+  } catch(e) {}
+}
+
+async function setResult(mid, res) {
+  await fetch(`${API}/api/room/${rid}/result/${mid}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({creator: me, result: res})
+  });
+  refresh();
+}
+
+async function settle(mid) {
+  await fetch(`${API}/api/room/${rid}/settle/${mid}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({creator: me, action: 'settle'})
+  });
+  refresh();
+}
+
+async function unsettle(mid) {
+  await fetch(`${API}/api/room/${rid}/settle/${mid}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({creator: me, action: 'unsettle'})
+  });
+  refresh();
+}
+
+async function addMatch() {
+  const home = prompt('主队名称:'); if (!home) return;
+  const away = prompt('客队名称:'); if (!away) return;
+  if (home === away) return toast('主客队不能相同');
+  const r = await fetch(`${API}/api/room/${rid}/match`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({creator: me, home, away})
+  });
+  const d = await r.json();
+  if (!r.ok) toast(d.err);
+  refresh();
+}
+
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>

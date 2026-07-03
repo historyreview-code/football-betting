@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>足球投注自动清算系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1923;color:#e0e6ed;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#1a2a3a;border-radius:16px;padding:48px;border:1px solid #2a3f55;max-width:640px;width:90%;text-align:center}
+h1{font-size:28px;color:#00e5a0;margin-bottom:8px}
+p{color:#8899aa;margin-bottom:32px;font-size:15px}
+.versions{display:flex;flex-direction:column;gap:16px}
+a{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#233244;border-radius:10px;text-decoration:none;color:#e0e6ed;border:1px solid #2a3f55;transition:all .2s}
+a:hover{border-color:#00e5a0;transform:translateY(-2px)}
+a .tag{font-size:12px;padding:4px 10px;border-radius:12px;font-weight:600}
+.tag-v1{background:rgba(136,153,170,.15);color:#8899aa}
+.tag-v2{background:rgba(0,229,160,.15);color:#00e5a0}
+a .arrow{font-size:20px;color:#00e5a0}
+.version-info{font-size:12px;color:#8899aa;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚽ 足球投注自动清算系统</h1>
+  <p>选择版本查看</p>
+  <div class="versions">
+    <a href="football-betting.html">
+      <span><strong>V1 · 基础版</strong><br><span style="font-size:12px;color:#8899aa">固定赔率模式</span></span>
+      <span><span class="tag tag-v1">原版</span><span class="arrow">→</span></span>
+    </a>
+    <a href="z/football-betting.html">
+      <span><strong>V2 · 修复版</strong><br><span style="font-size:12px;color:#8899aa">盈亏系数模式 · 数据持久化 · Bug修复</span></span>
+      <span><span class="tag tag-v2">推荐</span><span class="arrow">→</span></span>
+    </a>
+  </div>
+  <div class="version-info">GitHub: historyreview-code/football-betting</div>
+</div>
+</body>
+</html>

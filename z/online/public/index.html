@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>足球投注 · 在线版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b1a26;--surface:#132433;--card:#1a2d40;--accent:#00e5a0;--win:#2ecc71;--draw:#f1c40f;--lose:#e74c3c;--text:#e8edf2;--muted:#8899aa;--border:#1f3a52}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0b1a26,#132433);border-bottom:2px solid var(--accent);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:22px;color:var(--accent)}
+.header .info{font-size:13px;color:var(--muted)}
+.app{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;color:var(--accent);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:14px;outline:none;width:100%;transition:border-color .2s}
+input:focus{border-color:var(--accent)}
+input[type=number]{text-align:center;padding:7px 6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-accent{background:var(--accent);color:#0b1a26}.btn-accent:hover{opacity:.85}
+.btn-win{background:var(--win);color:#fff}.btn-win:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+.btn-danger{background:var(--lose);color:#fff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 16px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--surface);color:var(--muted);border:1px solid var(--border);transition:all .12s}
+.tab.active{background:var(--accent);color:#0b1a26;border-color:var(--accent);font-weight:600}
+.match-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:16px;margin-bottom:12px}
+.match-card.live{border-left:3px solid var(--accent)}
+.match-card.done{border-left:3px solid var(--win);opacity:.8}
+.match-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.match-teams{font-size:16px;font-weight:600}
+.match-teams .vs{color:var(--muted);font-size:12px;margin:0 8px}
+.match-status{font-size:11px;padding:2px 8px;border-radius:10px}
+.match-status.pending{background:rgba(136,153,170,.12);color:var(--muted)}
+.match-status.done{background:rgba(46,204,113,.12);color:var(--win)}
+.result-picker{display:flex;gap:6px;margin-bottom:10px}
+.result-picker button{flex:1;padding:7px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px;transition:all .12s}
+.result-picker button.sel-home{border-color:var(--win);background:rgba(46,204,113,.1);color:var(--win);font-weight:600}
+.result-picker button.sel-draw{border-color:var(--draw);background:rgba(241,196,15,.1);color:var(--draw);font-weight:600}
+.result-picker button.sel-away{border-color:var(--lose);background:rgba(231,76,60,.1);color:var(--lose);font-weight:600}
+.bet-grid{display:grid;gap:4px;margin-top:8px}
+.bet-header,.bet-row{display:grid;grid-template-columns:100px 60px 60px 60px;gap:6px;align-items:center}
+.bet-header{color:var(--muted);font-size:11px;padding:0 4px}
+.bet-row{padding:4px 4px}
+.bet-row .name{font-size:13px;font-weight:500}
+.bet-input{width:100%;padding:5px 4px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:12px;text-align:center}
+.bet-input:focus{border-color:var(--accent)}
+.settle-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.settle-table th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:11px}
+.settle-table td{padding:6px 8px;border-bottom:1px solid rgba(31,58,82,.3)}
+.coeff{font-weight:700;font-size:14px}
+.coeff.pos{color:var(--win)}.coeff.neg{color:var(--lose)}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.dash-item{background:var(--surface);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)}
+.dash-item .l{font-size:11px;color:var(--muted)}
+.dash-item .v{font-size:20px;font-weight:700;margin-top:2px}
+.empty{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+.room-card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:32px;max-width:400px;margin:40px auto;text-align:center}
+.room-card h2{color:var(--accent);margin-bottom:16px}
+.room-card .form-group{text-align:left}
+.player-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.player-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;font-size:12px}
+.player-badge.admin{border-color:var(--accent);color:var(--accent)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);color:var(--text);padding:12px 24px;border-radius:8px;font-size:13px;z-index:999;display:none;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.screen{display:none}
+.screen.active{display:block}
+.copy-btn{font-size:11px;padding:2px 8px;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:4px;margin-left:6px}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.api-url{font-size:12px;color:var(--muted);margin-top:8px;word-break:break-all}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== 首页/加入页面 ===== -->
+<div class="screen active" id="screen-home">
+  <div class="header">
+    <h1>⚽ 足球投注 · 在线版</h1>
+    <span class="info">各自独立在网上输入投注</span>
+  </div>
+  <div class="app">
+    <div class="room-card">
+      <h2>🏠 创建或加入房间</h2>
+      <div class="form-group">
+        <label>你的昵称</label>
+        <input type="text" id="myName" placeholder="输入昵称" onkeydown="if(event.key==='Enter'){if(document.getElementById('roomIdInput').value)joinRoom();else createRoom();}">
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <input type="text" id="roomIdInput" placeholder="房间号（加入时填）" style="flex:1">
+        <button class="btn btn-accent" onclick="joinRoom()">加入</button>
+      </div>
+      <button class="btn btn-accent" onclick="createRoom()" style="width:100%">➕ 创建新房间</button>
+      <div class="form-group" style="margin-top:12px">
+        <label>🔑 房间密码（可选）</label>
+        <input type="text" id="roomPassword" placeholder="留空为公开房间">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 房间内页面 ===== -->
+<div class="screen" id="screen-room">
+  <div class="header">
+    <div>
+      <h1>⚽ <span id="roomNameDisplay"></span></h1>
+      <span class="info" id="roomInfoDisplay"></span>
+    </div>
+    <div>
+      <span style="font-size:13px;color:var(--accent);font-weight:600" id="myNameDisplay"></span>
+      <button class="btn btn-outline btn-sm" onclick="leaveRoom()" style="margin-left:8px">离开</button>
+    </div>
+  </div>
+  <div class="app" id="roomApp">
+    <!-- 游戏大厅：网格布局 -->
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:20px">
+      <div>
+        <!-- 比赛列表 -->
+        <div class="card">
+          <div class="card-title">
+            📋 比赛列表
+            <button class="btn btn-accent btn-sm" onclick="showAddMatch()" style="margin-left:auto">➕ 添加比赛</button>
+          </div>
+          <div id="matchList"></div>
+        </div>
+        <div class="card" id="statsCard">
+          <div class="card-title">📊 清算总览</div>
+          <div id="statsContent"></div>
+        </div>
+      </div>
+      <div>
+        <!-- 参与者 + 投注面板 -->
+        <div class="card">
+          <div class="card-title">👥 参与者 <span id="playerCountBadge" style="font-size:11px;color:var(--muted);margin-left:auto"></span></div>
+          <div id="playerListDisplay"></div>
+        </div>
+        <div class="card" id="myBetPanel">
+          <div class="card-title">💰 我的投注</div>
+          <div id="myBetArea">选择一场比赛开始投注</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 状态 ====================
+const API_BASE = window.location.origin;
+let roomId = null;
+let myName = null;
+let myRole = null;
+let pollTimer = null;
+
+// ==================== 页面切换 ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ==================== 房间管理 ====================
+async function createRoom() {
+  const name = document.getElementById('myName').value.trim();
+  const password = document.getElementById('roomPassword').value.trim();
+  if (!name) return toast('请输入昵称');
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/rooms`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name: '我的房间', creator: name, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      roomId = data.roomId;
+      myName = name;
+      myRole = 'admin';
+      enterRoom(data.roomId);
+    } else {
+      toast(data.error || '创建失败');
+    }
+  } catch(e) {
+    toast('连接服务器失败: ' + e.message);
+  }
+}
+
+async function joinRoom() {
+  const name = document.getElementById('myName').value.trim();
+  const roomIdInput = document.getElementById('roomIdInput').value.trim();
+  const password = document.getElementById('roomPassword').value.trim();
+  if (!name) return toast('请输入昵称');
+  if (!roomIdInput) return toast('请输入房间号');
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/rooms/join`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ roomId: roomIdInput, name, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      roomId = data.roomId;
+      myName = name;
+      myRole = 'player';
+      enterRoom(data.roomId);
+    } else {
+      toast(data.error || '加入失败');
+    }
+  } catch(e) {
+    toast('连接服务器失败: ' + e.message);
+  }
+}
+
+async function enterRoom(id) {
+  // 获取房间信息
+  const res = await fetch(`${API_BASE}/api/rooms/${id}`);
+  const room = await res.json();
+  
+  document.getElementById('roomNameDisplay').textContent = room.name;
+  document.getElementById('roomInfoDisplay').textContent = `房间号: ${id} · ${room.players.length} 人`;
+  document.getElementById('myNameDisplay').textContent = `👤 ${myName} ${myRole === 'admin' ? '👑' : ''}`;
+  
+  showScreen('screen-room');
+  
+  // 开始轮询
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(() => refreshRoom(), 2000);
+  refreshRoom();
+}
+
+function leaveRoom() {
+  if (pollTimer) clearInterval(pollTimer);
+  roomId = null;
+  myName = null;
+  myRole = null;
+  showScreen('screen-home');
+}
+
+// ==================== 获取刷新数据 ====================
+async function refreshRoom() {
+  if (!roomId) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/rooms/${roomId}`);
+    const room = await res.json();
+    
+    document.getElementById('roomInfoDisplay').textContent = `房间号: ${roomId} · ${room.players.length} 人`;
+    
+    renderPlayers(room.players);
+    renderMatchList(room);
+    renderMyBets(room);
+    renderStats(room);
+  } catch(e) {
+    // 静默失败，轮询继续
+  }
+}
+
+async function refreshSettlement() {
+  if (!roomId) return;
+  const res = await fetch(`${API_BASE}/api/rooms/${roomId}/settlement`);
+  const data = await res.json();
+  renderSettlement(data);
+}
+
+// ==================== 渲染 ====================
+function renderPlayers(players) {
+  const el = document.getElementById('playerListDisplay');
+  document.getElementById('playerCountBadge').textContent = `${players.length} 人`;
+  el.innerHTML = players.map(p =>
+    `<span class="player-badge ${p.role}">${p.name} ${p.role === 'admin' ? '👑' : ''}</span>`
+  ).join('');
+}
+
+function renderMatchList(room) {
+  const el = document.getElementById('matchList');
+  if (room.matches.length === 0) {
+    el.innerHTML = '<div class="empty">暂无比赛，请管理员添加</div>';
+    return;
+  }
+  
+  el.innerHTML = room.matches.map(m => {
+    const isSettled = room.settled[m.id];
+    const result = room.result[m.id];
+    const cls = isSettled ? 'done' : 'live';
+    const statusText = isSettled ? `✅ 已结算` : '⏳ 待结算';
+    const rLabels = {home:'🏠主胜', draw:'🤝平局', away:'✈️客胜'};
+    
+    let resultHTML = '';
+    if (myRole === 'admin' && !isSettled) {
+      const sel = result;
+      resultHTML = `<div class="result-picker">
+        <button class="${sel==='home'?'sel-home':''}" onclick="setResult('${m.id}','home')">🏠 主胜</button>
+        <button class="${sel==='draw'?'sel-draw':''}" onclick="setResult('${m.id}','draw')">🤝 平局</button>
+        <button class="${sel==='away'?'sel-away':''}" onclick="setResult('${m.id}','away')">✈️ 客胜</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        ${result ? `<span style="font-size:12px;color:var(--accent)">已选: ${rLabels[result]}</span>` : ''}
+        ${result ? `<button class="btn btn-win btn-xs" onclick="settleMatch('${m.id}')">🔒 结算</button>` : ''}
+        <button class="btn btn-outline btn-xs" onclick="deleteMatch('${m.id}')">🗑️</button>
+      </div>`;
+    } else if (isSettled) {
+      resultHTML = `<div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--win)">
+        ✅ 结果: ${rLabels[result]}
+        ${myRole === 'admin' ? `<button class="btn btn-outline btn-xs" onclick="unSettleMatch('${m.id}')">↩️</button>` : ''}
+      </div>`;
+    } else {
+      resultHTML = '<span style="font-size:12px;color:var(--muted)">管理员尚未确认结果</span>';
+    }
+    
+    return `<div class="match-card ${cls}">
+      <div class="match-meta">
+        <div class="match-teams">${m.home} <span class="vs">VS</span> ${m.away}</div>
+        <span class="match-status ${isSettled?'done':'pending'}">${statusText}</span>
+      </div>
+      ${resultHTML}
+    </div>`;
+  }).join('');
+}
+
+function renderMyBets(room) {
+  const el = document.getElementById('myBetArea');
+  const pendingMatches = room.matches.filter(m => !room.settled[m.id]);
+  
+  if (pendingMatches.length === 0) {
+    el.innerHTML = '<div class="empty">没有可投注的比赛</div>';
+    return;
+  }
+  
+  let html = '';
+  for (const m of pendingMatches) {
+    const myBets = (room.bets[m.id] && room.bets[m.id][myName]) || {home:0, draw:0, away:0};
+    html += `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px">${m.home} VS ${m.away}</div>
+      <div class="bet-grid">
+        <div class="bet-header"><span></span><span>🏠主</span><span>🤝平</span><span>✈️客</span></div>
+        <div class="bet-row">
+          <span class="name">我的下注</span>
+          <input class="bet-input" type="number" min="0" step="1" value="${myBets.home||''}" placeholder="0" onchange="placeBet('${m.id}','home',this.value)">
+          <input class="bet-input" type="number" min="0" step="1" value="${myBets.draw||''}" placeholder="0" onchange="placeBet('${m.id}','draw',this.value)">
+          <input class="bet-input" type="number" min="0" step="1" value="${myBets.away||''}" placeholder="0" onchange="placeBet('${m.id}','away',this.value)">
+        </div>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderStats(room) {
+  fetch(`${API_BASE}/api/rooms/${roomId}/settlement`).then(r => r.json()).then(data => {
+    const el = document.getElementById('statsContent');
+    const settledCount = room.matches.filter(m => room.settled[m.id]).length;
+    if (settledCount === 0) {
+      el.innerHTML = '<div class="empty">暂无已结算比赛</div>';
+      return;
+    }
+    
+    const rep = data.report;
+    const totalBet = Object.values(rep).reduce((s,r) => s + r.totalBet, 0);
+    const winners = Object.values(rep).filter(r => r.netProfit > 0).length;
+    const losers = Object.values(rep).filter(r => r.netProfit < 0).length;
+    const sorted = [...data.players].sort((a,b) => (rep[b]?.netProfit||0) - (rep[a]?.netProfit||0));
+    
+    el.innerHTML = `<div class="dash-grid">
+      <div class="dash-item"><div class="l">已结算</div><div class="v" style="color:var(--accent)">${settledCount}</div></div>
+      <div class="dash-item"><div class="l">总下注</div><div class="v" style="color:var(--accent)">${totalBet.toFixed(2)}</div></div>
+      <div class="dash-item"><div class="l">盈利</div><div class="v" style="color:var(--win)">${winners}</div></div>
+      <div class="dash-item"><div class="l">亏损</div><div class="v" style="color:var(--lose)">${losers}</div></div>
+    </div>
+    <table class="settle-table">
+      <tr><th>#</th><th>参与者</th><th>总下注</th><th>净利润</th><th>盈亏系数</th></tr>
+      ${sorted.map((p,i) => {
+        const r = rep[p] || {totalBet:0,netProfit:0,coeff:0};
+        const sign = r.netProfit >= 0 ? '+' : '';
+        const cc = r.coeff > 0 ? 'pos' : (r.coeff < 0 ? 'neg' : '');
+        return `<tr>
+          <td>${['🥇','🥈','🥉',''][i]||(i+1)}</td>
+          <td style="font-weight:600">${p}</td>
+          <td>${r.totalBet.toFixed(2)}</td>
+          <td style="color:${r.netProfit>=0?'var(--win)':'var(--lose)'}">${sign}${r.netProfit.toFixed(2)}</td>
+          <td><span class="coeff ${cc}">${r.coeff >= 0 ? '+' : ''}${r.coeff.toFixed(4)}</span></td>
+        </tr>`;
+      }).join('')}
+    </table>`;
+  }).catch(() => {});
+}
+
+// ==================== 操作API ====================
+async function placeBet(matchId, opt, value) {
+  const val = parseFloat(value) || 0;
+  if (val < 0) return;
+  
+  // 先获取当前投注数据
+  const roomRes = await fetch(`${API_BASE}/api/rooms/${roomId}`);
+  const room = await roomRes.json();
+  const myBets = (room.bets[matchId] && room.bets[matchId][myName]) || {home:0, draw:0, away:0};
+  myBets[opt] = val;
+  
+  try {
+    await fetch(`${API_BASE}/api/rooms/${roomId}/bets`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ player: myName, matchId, ...myBets })
+    });
+    refreshRoom();
+  } catch(e) {
+    toast('投注失败');
+  }
+}
+
+async function setResult(matchId, result) {
+  try {
+    await fetch(`${API_BASE}/api/rooms/${roomId}/results/${matchId}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ result, creator: myName })
+    });
+    refreshRoom();
+  } catch(e) {
+    toast('设置结果失败');
+  }
+}
+
+async function settleMatch(matchId) {
+  try {
+    await fetch(`${API_BASE}/api/rooms/${roomId}/settle/${matchId}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ creator: myName })
+    });
+    refreshRoom();
+  } catch(e) {
+    toast('结算失败');
+  }
+}
+
+async function unSettleMatch(matchId) {
+  try {
+    await fetch(`${API_BASE}/api/rooms/${roomId}/unsettle/${matchId}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ creator: myName })
+    });
+    refreshRoom();
+  } catch(e) {
+    toast('操作失败');
+  }
+}
+
+async function showAddMatch() {
+  const home = prompt('主队名称:');
+  if (!home) return;
+  const away = prompt('客队名称:');
+  if (!away) return;
+  if (home === away) return toast('主队和客队不能相同');
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/rooms/${roomId}/matches`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ home, away, creator: myName })
+    });
+    if (res.ok) {
+      refreshRoom();
+    } else {
+      const data = await res.json();
+      toast(data.error || '添加失败');
+    }
+  } catch(e) {
+    toast('添加失败');
+  }
+}
+
+async function deleteMatch(matchId) {
+  if (!confirm('确定删除该比赛？')) return;
+  try {
+    await fetch(`${API_BASE}/api/rooms/${roomId}/matches/${matchId}`, {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ creator: myName })
+    });
+    refreshRoom();
+  } catch(e) {
+    toast('删除失败');
+  }
+}
+
+// ==================== 工具 ====================
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>

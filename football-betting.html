@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>足球投注自动清算系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b1a26;--surface:#132433;--card:#1a2d40;--accent:#00e5a0;--win:#2ecc71;--draw:#f1c40f;--lose:#e74c3c;--text:#e8edf2;--muted:#8899aa;--border:#1f3a52;--radius:10px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0b1a26,#132433);border-bottom:2px solid var(--accent);padding:24px 32px}
+.header h1{font-size:24px;color:var(--accent)}
+.header p{color:var(--muted);font-size:13px;margin-top:4px}
+.app{max-width:1280px;margin:0 auto;padding:24px}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:20px}
+.card-title{font-size:15px;color:var(--accent);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card-title .badge{font-size:11px;background:var(--surface);color:var(--muted);padding:2px 8px;border-radius:10px;margin-left:auto}
+input,select{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:14px;outline:none;width:100%;transition:border-color .2s}
+input:focus{border-color:var(--accent)}
+input[type=number]{text-align:center;padding:7px 6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-accent{background:var(--accent);color:#0b1a26}.btn-accent:hover{opacity:.85}
+.btn-win{background:var(--win);color:#fff}.btn-win:hover{opacity:.85}
+.btn-draw{background:var(--draw);color:#1a1a1a}.btn-draw:hover{opacity:.85}
+.btn-lose{background:var(--lose);color:#fff}.btn-lose:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px;border-radius:4px}
+.btn-danger{background:var(--lose);color:#fff}
+.grid-2{display:grid;grid-template-columns:320px 1fr;gap:20px}
+@media(max-width:860px){.grid-2{grid-template-columns:1fr}}
+.sidebar{display:flex;flex-direction:column;gap:20px}
+.player-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);border-radius:16px;font-size:13px}
+.chip .del{cursor:pointer;color:var(--lose);font-weight:700;font-size:15px;line-height:1;margin-left:2px}
+.chip .del:hover{opacity:.7}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 18px;border-radius:20px;font-size:13px;cursor:pointer;background:var(--surface);color:var(--muted);border:1px solid var(--border);transition:all .15s}
+.tab.active{background:var(--accent);color:#0b1a26;border-color:var(--accent);font-weight:600}
+.match-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:18px;margin-bottom:14px;transition:border-color .15s}
+.match-card:hover{border-color:rgba(0,229,160,.3)}
+.match-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.match-teams{font-size:17px;font-weight:600;letter-spacing:.5px}
+.match-teams .vs{color:var(--muted);font-size:13px;margin:0 10px;font-weight:400}
+.match-status{font-size:12px;padding:3px 10px;border-radius:12px}
+.match-status.pending{background:rgba(136,153,170,.12);color:var(--muted)}
+.match-status.done{background:rgba(46,204,113,.12);color:var(--win)}
+.result-picker{display:flex;gap:8px;margin-bottom:12px}
+.result-picker button{flex:1;padding:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:6px;cursor:pointer;font-size:13px;transition:all .12s}
+.result-picker button:hover{border-color:var(--accent);color:var(--text)}
+.result-picker button.sel-home{border-color:var(--win);background:rgba(46,204,113,.1);color:var(--win);font-weight:600}
+.result-picker button.sel-draw{border-color:var(--draw);background:rgba(241,196,15,.1);color:var(--draw);font-weight:600}
+.result-picker button.sel-away{border-color:var(--lose);background:rgba(231,76,60,.1);color:var(--lose);font-weight:600}
+/* 投注表格 */
+.bet-area{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.bet-grid{display:grid;gap:6px}
+.bet-header,.bet-row{display:grid;grid-template-columns:1fr 70px 70px 70px 32px;gap:6px;align-items:center}
+.bet-header{color:var(--muted);font-size:11px;padding:0 4px;margin-bottom:2px}
+.bet-row{padding:4px}
+.bet-row .name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.bet-row .del{cursor:pointer;color:var(--lose);font-size:18px;font-weight:700;text-align:center;line-height:1;opacity:.5;transition:opacity .15s}
+.bet-row .del:hover{opacity:1}
+/* 清算明细 */
+.settle-area{margin-top:12px;padding-top:12px;border-top:2px solid var(--accent)}
+.settle-grid{display:grid;gap:4px}
+.settle-header,.settle-row{display:grid;grid-template-columns:1fr 70px 70px 70px;gap:6px;align-items:center;padding:6px 4px;font-size:13px}
+.settle-header{color:var(--muted);font-size:11px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.settle-row+.settle-row{border-top:1px solid rgba(31,58,82,.5)}
+.prof{color:var(--win)}.los{color:var(--lose)}.flip{color:var(--draw)}
+/* 清算总览仪表盘 */
+.dashboard{margin-top:20px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.dash-item{background:var(--surface);border-radius:var(--radius);padding:16px;text-align:center;border:1px solid var(--border)}
+.dash-item .l{font-size:11px;color:var(--muted)}
+.dash-item .v{font-size:24px;font-weight:700;margin-top:4px}
+.rank-table{width:100%;border-collapse:collapse;font-size:13px}
+.rank-table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:12px}
+.rank-table td{padding:8px 10px;border-bottom:1px solid rgba(31,58,82,.3)}
+.rank-table tr:last-child td{border-bottom:none}
+.coeff{font-weight:700;font-size:15px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.empty .icon{font-size:36px;margin-bottom:10px}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚽ 足球投注自动清算系统</h1>
+  <p>多参与者 · 多场比赛 · 胜负平投注 · 自动盈亏清算</p>
+</div>
+
+<div class="app">
+  <div class="toolbar">
+    <button class="btn btn-accent" onclick="showAddMatch()">➕ 添加比赛</button>
+    <button class="btn btn-outline" onclick="showAddPlayer()">👤 添加参与者</button>
+  </div>
+
+  <div class="grid-2">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+      <div class="card" id="playersPanel">
+        <div class="card-title">👥 参与者 <span class="badge" id="playerCount">0</span></div>
+        <div class="player-chips" id="playerChips"></div>
+        <div style="margin-top:10px;display:flex;gap:6px">
+          <input type="text" id="playerInput" placeholder="输入名称" style="flex:1" onkeydown="if(event.key==='Enter')addPlayer()">
+          <button class="btn btn-accent btn-sm" onclick="addPlayer()">添加</button>
+        </div>
+      </div>
+
+      <div class="card" id="addMatchPanel" style="display:none">
+        <div class="card-title">📅 新比赛</div>
+        <div style="display:grid;gap:8px">
+          <input type="text" id="homeInput" placeholder="主队名称" onkeydown="if(event.key==='Enter')document.getElementById('awayInput').focus()">
+          <input type="text" id="awayInput" placeholder="客队名称" onkeydown="if(event.key==='Enter')confirmAddMatch()">
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="btn btn-accent btn-sm" onclick="confirmAddMatch()" style="flex:1">确认添加</button>
+            <button class="btn btn-outline btn-sm" onclick="hideAddMatch()">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="statsPanel">
+        <div class="card-title">📊 清算总览</div>
+        <div id="statsContent"><div class="empty"><div class="icon">📋</div><div>暂无已结算比赛</div></div></div>
+      </div>
+    </div>
+
+    <!-- 主区域 -->
+    <div>
+      <div class="tabs" id="tabBar">
+        <div class="tab active" onclick="switchTab('pending')">⏳ 未结算</div>
+        <div class="tab" onclick="switchTab('settled')">✅ 已结算</div>
+        <div class="tab" onclick="switchTab('all')">📋 全部</div>
+      </div>
+      <div id="matchContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 数据层 ====================
+const KEY = 'fb_data';
+let data = loadData();
+if (!data) {
+  data = { players: [], matches: [], idSeq: 0 };
+}
+let currentTab = 'pending';
+let betInputTimers = {};
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(KEY)); } catch(e) { return null; }
+}
+function saveData() {
+  localStorage.setItem(KEY, JSON.stringify(data));
+}
+
+// ==================== 参与者 ====================
+function addPlayer() {
+  const inp = document.getElementById('playerInput');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (data.players.includes(name)) { inp.value=''; return; }
+  data.players.push(name);
+  inp.value = '';
+  saveData(); renderAll();
+}
+
+function removePlayer(name) {
+  data.players = data.players.filter(p => p !== name);
+  for (const m of data.matches) delete m.bets[name];
+  saveData(); renderAll();
+}
+
+function showAddPlayer() {
+  document.getElementById('playerInput').focus();
+}
+
+// ==================== 比赛 ====================
+function showAddMatch() {
+  document.getElementById('addMatchPanel').style.display = 'block';
+  document.getElementById('homeInput').focus();
+}
+function hideAddMatch() {
+  document.getElementById('addMatchPanel').style.display = 'none';
+  document.getElementById('homeInput').value = '';
+  document.getElementById('awayInput').value = '';
+}
+function confirmAddMatch() {
+  const home = document.getElementById('homeInput').value.trim();
+  const away = document.getElementById('awayInput').value.trim();
+  if (!home || !away) return alert('请输入主队和客队名称');
+  if (home === away) return alert('主队和客队不能相同');
+  const match = {
+    id: ++data.idSeq,
+    home, away,
+    result: null,
+    settled: false,
+    bets: {}
+  };
+  data.matches.push(match);
+  hideAddMatch();
+  saveData(); renderAll();
+  currentTab = 'pending';
+  updateTabs();
+  renderMatchList();
+}
+
+function setResult(id, res) {
+  const m = data.matches.find(x => x.id === id);
+  if (!m || m.settled) return;
+  m.result = res;
+  saveData(); renderAll();
+}
+
+function settle(id) {
+  const m = data.matches.find(x => x.id === id);
+  if (!m) return;
+  if (!m.result) return alert('请先选择比赛结果');
+  if (m.settled) return;
+  m.settled = true;
+  saveData(); renderAll();
+}
+
+function unSettle(id) {
+  const m = data.matches.find(x => x.id === id);
+  if (!m || !m.settled) return;
+  m.settled = false;
+  m.result = null;
+  saveData(); renderAll();
+}
+
+function deleteMatch(id) {
+  if (!confirm('确定删除该比赛？相关下注数据也将清除。')) return;
+  data.matches = data.matches.filter(x => x.id !== id);
+  saveData(); renderAll();
+}
+
+// ==================== 下注（使用事件委托） ====================
+// 直接用事件委托监听所有 bet-input 的 change 事件
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('bet-input')) {
+    const inp = e.target;
+    const mid = parseInt(inp.dataset.mid);
+    const player = inp.dataset.player;
+    const opt = inp.dataset.opt;
+    const val = parseFloat(inp.value) || 0;
+    if (val < 0) { inp.value = 0; return; }
+    const m = data.matches.find(x => x.id === mid);
+    if (!m || m.settled) return;
+    if (!m.bets[player]) m.bets[player] = {home:0,draw:0,away:0};
+    m.bets[player][opt] = val;
+    saveData();
+    renderStats();
+  }
+});
+
+function clearBet(mid, player) {
+  const m = data.matches.find(x => x.id === mid);
+  if (!m || m.settled) return;
+  delete m.bets[player];
+  saveData(); renderAll();
+}
+
+// ==================== 选项卡 ====================
+function switchTab(tab) {
+  currentTab = tab;
+  updateTabs();
+  renderMatchList();
+}
+function updateTabs() {
+  document.querySelectorAll('.tab').forEach(el => {
+    const t = el.textContent.trim().includes('未结算') ? 'pending'
+             : el.textContent.trim().includes('已结算') ? 'settled' : 'all';
+    el.classList.toggle('active', t === currentTab);
+  });
+}
+
+// ==================== 清算引擎 ====================
+function calcAll() {
+  // 按玩家汇总
+  const rep = {};
+  for (const p of data.players) {
+    rep[p] = { totalBet: 0, totalWin: 0, netProfit: 0, coeff: 0 };
+  }
+
+  for (const m of data.matches) {
+    if (!m.settled || !m.result) continue;
+    const pools = {home:0, draw:0, away:0};
+    for (const b of Object.values(m.bets)) {
+      pools.home += b.home||0;
+      pools.draw += b.draw||0;
+      pools.away += b.away||0;
+    }
+    const total = pools.home + pools.draw + pools.away;
+    if (total === 0) continue;
+
+    for (const [player, b] of Object.entries(m.bets)) {
+      if (!rep[player]) continue;
+      const pb = (b.home||0)+(b.draw||0)+(b.away||0);
+      rep[player].totalBet += pb;
+    }
+
+    const winOpt = m.result;
+    const winPool = pools[winOpt];
+    const lossPool = total - winPool;
+
+    for (const [player, b] of Object.entries(m.bets)) {
+      if (!rep[player]) continue;
+      const pb = (b.home||0)+(b.draw||0)+(b.away||0);
+      if (pb === 0) continue;
+      const pWinBet = b[winOpt]||0;
+      // 赢回金额 = 中注本金 + 按比例瓜分输池
+      let winBack = pWinBet;
+      if (pWinBet > 0 && winPool > 0) {
+        const share = pWinBet / winPool;
+        winBack += share * lossPool;
+      }
+      rep[player].totalWin += winBack;
+    }
+  }
+
+  // 净利润 = totalWin - totalBet; 系数 = netProfit / totalBet
+  for (const p of data.players) {
+    const r = rep[p];
+    r.netProfit = r.totalWin - r.totalBet;
+    r.coeff = r.totalBet > 0 ? Math.round((r.netProfit / r.totalBet) * 10000) / 10000 : 0;
+  }
+
+  return rep;
+}
+
+// ==================== 渲染 ====================
+function renderAll() {
+  renderPlayers();
+  renderMatchList();
+  renderStats();
+}
+
+function renderPlayers() {
+  const chips = document.getElementById('playerChips');
+  const count = document.getElementById('playerCount');
+  count.textContent = data.players.length;
+  if (data.players.length === 0) {
+    chips.innerHTML = '<span style="color:var(--muted);font-size:13px">暂无参与者</span>';
+    return;
+  }
+  chips.innerHTML = data.players.map(p =>
+    `<span class="chip">${esc(p)} <span class="del" onclick="removePlayer('${escAttr(p)}')">×</span></span>`
+  ).join('');
+}
+
+function renderMatchList() {
+  const el = document.getElementById('matchContainer');
+  const filtered = data.matches.filter(m => {
+    if (currentTab === 'pending') return !m.settled;
+    if (currentTab === 'settled') return m.settled;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="icon">📋</div><div>暂无比赛</div></div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
+}
+
+function renderMatchCard(m) {
+  const isDone = m.settled;
+  const rMap = {home:'🏠 主胜', draw:'🤝 平局', away:'✈️ 客胜'};
+  const statusHTML = isDone
+    ? `<span class="match-status done">✅ 已结算 · ${rMap[m.result]}</span>`
+    : `<span class="match-status pending">⏳ 待结算</span>`;
+
+  // 结果选择器
+  let resultHTML = '';
+  if (!isDone) {
+    const sel = m.result;
+    const rLabels = {home:'🏠 主胜',draw:'🤝 平局',away:'✈️ 客胜'};
+    resultHTML = `<div class="result-picker">
+      <button class="${sel==='home'?'sel-home':''}" onclick="setResult(${m.id},'home')">🏠 主胜</button>
+      <button class="${sel==='draw'?'sel-draw':''}" onclick="setResult(${m.id},'draw')">🤝 平局</button>
+      <button class="${sel==='away'?'sel-away':''}" onclick="setResult(${m.id},'away')">✈️ 客胜</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
+      ${sel ? `<span style="font-size:13px;color:var(--accent);font-weight:600">已选结果：${rLabels[sel]}</span>` : '<span style="font-size:13px;color:var(--muted)">请先选择比赛结果</span>'}
+      <button class="btn btn-win" onclick="settle(${m.id})" ${sel?'':'disabled'}>🔒 确认结算本场比赛</button>
+      <button class="btn btn-outline btn-sm" onclick="deleteMatch(${m.id})">🗑️ 删除</button>
+    </div>`;
+  } else {
+    resultHTML = `<div class="action-row">
+      <span style="font-size:13px;color:var(--win);font-weight:600">✅ 最终结果：${rMap[m.result]}</span>
+      <button class="btn btn-outline btn-sm" onclick="unSettle(${m.id})">↩️ 重新开赛</button>
+      <button class="btn btn-outline btn-sm" onclick="deleteMatch(${m.id})">🗑️ 删除</button>
+    </div>`;
+  }
+
+  // 投注区域
+  let betHTML = '';
+  if (!isDone && data.players.length > 0) {
+    let rows = '';
+    for (const p of data.players) {
+      const b = m.bets[p] || {};
+      const h = b.home||''; const d = b.draw||''; const a = b.away||'';
+      const hasBet = (b.home||0)>0||(b.draw||0)>0||(b.away||0)>0;
+      rows += `<div class="bet-row">
+        <span class="name">${esc(p)}</span>
+        <input class="bet-input" type="number" min="0" step="1" value="${h}" data-mid="${m.id}" data-player="${escAttr(p)}" data-opt="home" placeholder="主">
+        <input class="bet-input" type="number" min="0" step="1" value="${d}" data-mid="${m.id}" data-player="${escAttr(p)}" data-opt="draw" placeholder="平">
+        <input class="bet-input" type="number" min="0" step="1" value="${a}" data-mid="${m.id}" data-player="${escAttr(p)}" data-opt="away" placeholder="客">
+        ${hasBet ? `<span class="del" onclick="clearBet(${m.id},'${escAttr(p)}')">×</span>` : '<span></span>'}
+      </div>`;
+    }
+    betHTML = `<div class="bet-area">
+      <div class="bet-grid">
+        <div class="bet-header"><span>参与者</span><span>🏠主</span><span>🤝平</span><span>✈️客</span><span></span></div>
+        ${rows}
+      </div>
+    </div>`;
+  }
+
+  // 清算明细（已结算比赛）
+  let settleHTML = '';
+  if (isDone) {
+    const pools = {home:0,draw:0,away:0};
+    for (const b of Object.values(m.bets)) {
+      pools.home += b.home||0; pools.draw += b.draw||0; pools.away += b.away||0;
+    }
+    const total = pools.home+pools.draw+pools.away;
+    const winPool = pools[m.result]||0;
+    const lossPool = total - winPool;
+
+    let rows = '';
+    for (const p of data.players) {
+      const b = m.bets[p] || {};
+      const pb = (b.home||0)+(b.draw||0)+(b.away||0);
+      if (pb === 0) continue;
+      const pWinBet = b[m.result]||0;
+      const share = pWinBet > 0 && winPool > 0 ? pWinBet / winPool : 0;
+      const earn = pb + share * lossPool;
+      const profit = earn - pb;
+      const cls = profit > 0 ? 'prof' : (profit < 0 ? 'los' : 'flip');
+      const sign = profit >= 0 ? '+' : '';
+      rows += `<div class="settle-row">
+        <span>${esc(p)}</span>
+        <span>${pb}</span>
+        <span>${pWinBet}</span>
+        <span class="${cls}">${sign}${profit.toFixed(2)}</span>
+      </div>`;
+    }
+    settleHTML = `<div class="settle-area">
+      <div style="font-size:13px;color:var(--accent);margin-bottom:8px">📊 清算明细</div>
+      <div class="settle-grid">
+        <div class="settle-header"><span>参与者</span><span>下注额</span><span>中注</span><span>盈亏</span></div>
+        ${rows}
+      </div>
+    </div>`;
+  }
+
+  return `<div class="match-card">
+    <div class="match-meta">
+      <div class="match-teams">${esc(m.home)} <span class="vs">VS</span> ${esc(m.away)}</div>
+      ${statusHTML}
+    </div>
+    ${resultHTML}
+    ${betHTML}
+    ${settleHTML}
+  </div>`;
+}
+
+function renderStats() {
+  const rep = calcAll();
+  const el = document.getElementById('statsContent');
+
+  const settledCount = data.matches.filter(m => m.settled).length;
+  if (settledCount === 0) {
+    el.innerHTML = `<div class="empty" style="padding:16px"><div class="icon">📋</div><div>暂无已结算比赛</div></div>`;
+    return;
+  }
+
+  const totalBet = Object.values(rep).reduce((s,r) => s + r.totalBet, 0);
+  const winners = Object.values(rep).filter(r => r.netProfit > 0).length;
+  const losers = Object.values(rep).filter(r => r.netProfit < 0).length;
+
+  const sorted = [...data.players].sort((a,b) => rep[b]?.netProfit - rep[a]?.netProfit);
+
+  el.innerHTML = `<div class="dash-grid" style="margin-bottom:14px">
+    <div class="dash-item"><div class="l">已结算</div><div class="v" style="color:var(--accent)">${settledCount}</div></div>
+    <div class="dash-item"><div class="l">总下注</div><div class="v" style="color:var(--accent)">${totalBet.toFixed(2)}</div></div>
+    <div class="dash-item"><div class="l">盈利</div><div class="v prof">${winners}</div></div>
+    <div class="dash-item"><div class="l">亏损</div><div class="v los">${losers}</div></div>
+  </div>
+  <table class="rank-table">
+    <tr><th>#</th><th>参与者</th><th>总下注</th><th>净利润</th><th>盈亏系数</th></tr>
+    ${sorted.map((p,i) => {
+      const r = rep[p] || {totalBet:0,netProfit:0,coeff:0};
+      const sign = r.netProfit >= 0 ? '+' : '';
+      const cCls = r.coeff > 0 ? 'prof' : (r.coeff < 0 ? 'los' : 'flip');
+      return `<tr>
+        <td>${['🥇','🥈','🥉',''][i]||(i+1)}</td>
+        <td style="font-weight:600">${esc(p)}</td>
+        <td>${r.totalBet.toFixed(2)}</td>
+        <td class="${r.netProfit>=0?'prof':'los'}">${sign}${r.netProfit.toFixed(2)}</td>
+        <td><span class="coeff ${cCls}">${r.coeff >= 0 ? '+' : ''}${r.coeff.toFixed(4)}</span></td>
+      </tr>`;
+    }).join('')}
+  </table>`;
+}
+
+// ==================== 工具 ====================
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escAttr(s) {
+  return s.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+
+// ==================== 启动 ====================
+renderAll();
+</script>
+</body>
+</html>
